@@ -10,9 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 import os
-import environ
 from pathlib import Path
 
+import toml
 import django
 from django.utils.encoding import force_str
 django.utils.encoding.force_text = force_str
@@ -21,35 +21,43 @@ django.utils.encoding.force_text = force_str
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = str(Path(__file__).resolve().parent.parent)
 
-env = environ.Env(DEBUG=(bool, False),
-                  TEST=(bool, False))
-environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
+conf = (toml.load(os.path.join(BASE_DIR, 'conf.toml')))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-3-g*%)c)f_iy%t*+4mqo6z(w_@x+1yk0)8+n6rmwv)i%rh#n_k'
+SECRET_KEY = conf['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = conf['DEBUG']
 
-ALLOWED_HOSTS = env('ALLOWED_HOSTS').split(',')
+ALLOWED_HOSTS = conf['ALLOWED_HOSTS']
 
 
-# Application definition
-
-INSTALLED_APPS = [
+# Application apps from django.
+DEFAULT_APPS = [
+    'daphne',  # Third Party exception to be on top of the list. To install python -m pip install -U channels["daphne"]
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+]
+
+# Include all apps from third party packages/apps.
+THIRD_PARTY_APPS = [
     'graphene_django',
+]
+
+# Include our own local packages/apps.
+LOCAL_APPS = [
     'acc',
     'chat',
 ]
+
+INSTALLED_APPS = DEFAULT_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -79,8 +87,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'quickchat.wsgi.application'
-
+# WSGI_APPLICATION = 'quickchat.wsgi.application'
+ASGI_APPLICATION = "quickchat.asgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
@@ -88,12 +96,12 @@ WSGI_APPLICATION = 'quickchat.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': env('DATABASE_ENGINE'),
-        'NAME': env('DATABASE_NAME'),
-        'USER': env('DATABASE_USER'),
-        'PASSWORD': env('DATABASE_PASSWORD'),
-        'HOST': env('DATABASE_HOST'),
-        'PORT': env('DATABASE_PORT'),
+        'ENGINE': conf['DB_DJANGO']['ENGINE'],
+        'NAME': conf['DB_DJANGO']['NAME'],
+        'USER': conf['DB_DJANGO']['USER'],
+        'PASSWORD': conf['DB_DJANGO']['PASSWORD'],
+        'HOST': conf['DB_DJANGO']['HOST'],
+        'PORT': conf['DB_DJANGO']['PORT'],
     }
 }
 
