@@ -17,7 +17,6 @@ import django
 from django.utils.encoding import force_str
 django.utils.encoding.force_text = force_str
 
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = str(Path(__file__).resolve().parent.parent)
 
@@ -89,7 +88,14 @@ TEMPLATES = [
 
 # WSGI_APPLICATION = 'quickchat.wsgi.application'
 ASGI_APPLICATION = "quickchat.asgi.application"
-
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 

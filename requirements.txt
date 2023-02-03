@@ -1,0 +1,10 @@
+django==4.1.1
+
+channels==4.0.0
+channels-redis==4.0.0
+daphne==4.0.0
+
+graphene==2.1.9
+graphene-django==2.15.0
+
+toml==0.10.2
