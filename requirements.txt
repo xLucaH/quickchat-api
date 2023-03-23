@@ -8,3 +8,6 @@ graphene==2.1.9
 graphene-django==2.15.0
 
 toml==0.10.2
+
+asgiref==3.6.0
+mysqlclient==2.1.1

@@ -32,11 +32,14 @@ SECRET_KEY = conf['SECRET_KEY']
 DEBUG = conf['DEBUG']
 
 ALLOWED_HOSTS = conf['ALLOWED_HOSTS']
+CORS_ALLOWED_ORIGINS = conf['ALLOWED_CORS_ORIGINS']
 
+FRONTEND_URL = conf['FRONTEND_URL']
 
 # Application apps from django.
 DEFAULT_APPS = [
     'daphne',  # Third Party exception to be on top of the list. To install python -m pip install -U channels["daphne"]
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -52,6 +55,7 @@ THIRD_PARTY_APPS = [
 
 # Include our own local packages/apps.
 LOCAL_APPS = [
+    'quickchat',
     'acc',
     'chat',
 ]
@@ -64,6 +68,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -102,12 +108,12 @@ CHANNEL_LAYERS = {
 
 DATABASES = {
     'default': {
-        'ENGINE': conf['DB_DJANGO']['ENGINE'],
-        'NAME': conf['DB_DJANGO']['NAME'],
-        'USER': conf['DB_DJANGO']['USER'],
-        'PASSWORD': conf['DB_DJANGO']['PASSWORD'],
-        'HOST': conf['DB_DJANGO']['HOST'],
-        'PORT': conf['DB_DJANGO']['PORT'],
+        'ENGINE': conf['database']['django']['ENGINE'],
+        'NAME': conf['database']['django']['NAME'],
+        'USER': conf['database']['django']['USER'],
+        'PASSWORD': conf['database']['django']['PASSWORD'],
+        'HOST': conf['database']['django']['HOST'],
+        'PORT': conf['database']['django']['PORT'],
     }
 }
 
@@ -149,6 +155,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, STATIC_URL)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field

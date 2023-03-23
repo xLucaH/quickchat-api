@@ -1,87 +1,80 @@
-from datetime import datetime
-
 import graphene
-from graphene_django import DjangoObjectType
 
-from chat.lib import utils
+from chat.lib.domain import room_models
+from chat.lib.domain.di import room_actions
 
-from .models import Rooms, Messages, JoinedRooms
-
-
-class RoomsType(DjangoObjectType):
-    class Meta:
-        model = Rooms
-        fields = (
-            'room_id',
-            'access_code',
-            'name',
-            'created',
-            'expiring',
-        )
+from .models import Rooms
 
 
-class MessagesType(DjangoObjectType):
-    class Meta:
-        model = Messages
-        fields = (
-            'users_user',
-            'rooms_room',
-            'created',
-            'content',
-            'content_type',
-        )
+class RoomsType(graphene.ObjectType):
+
+    room_id = graphene.String()
+    access_code = graphene.String()
+    name = graphene.String()
+    created = graphene.DateTime()
+    expiring = graphene.DateTime()
+    url = graphene.String()
 
 
-class JoinedRoomsType(DjangoObjectType):
-    class Meta:
-        model = JoinedRooms
-        fields = (
-            'room',
-            'user',
-            'last_joined',
-        )
+class MessagesType(graphene.ObjectType):
+
+    content = graphene.String()
+
+
+class JoinRoomType(graphene.ObjectType):
+
+    value = graphene.String()
+    expiring = graphene.String()
 
 
 class JoinRoom(graphene.Mutation):
+
     class Arguments:
         access_code = graphene.String()
+        username = graphene.String()
 
-    join_room = graphene.Field(JoinedRoomsType)
+    token = graphene.Field(JoinRoomType)
+
+    @staticmethod
+    def resolve_token(token: room_models.RoomAuthTokenModel, info: graphene.ResolveInfo):
+        return JoinRoomType(
+            value=token.value,
+            expiring=str(token.expiring)
+        )
 
     @classmethod
-    def mutate(cls, _, info, access_code):
+    def mutate(cls, _, info: graphene.ResolveInfo, access_code, username, **data):
+        request = info.context
 
-        room = utils.get_room_by_access_code(access_code)
-
-        if room is None:
-            return
-
-        join_room = JoinedRooms(room=room,
-                                user=info.context.user,
-                                last_joined=utils.now())
-        join_room.save()
-
-        return JoinRoom(joined_room=join_room)
-
+        token = room_actions.join_room(
+            request=request,
+            username=username,
+            access_code=access_code
+        )
+        return token
 
 class CreateRoom(graphene.Mutation):
+
     class Arguments:
         name = graphene.String()
 
     room = graphene.Field(RoomsType)
+    url = graphene.String()
+
+    @staticmethod
+    def resolve_room(room: room_models.RoomModel, info):
+        return RoomsType(
+            room_id=room.id,
+            name=room.name,
+            access_code=room.access_code,
+            created=room.created,
+            expiring=room.expiring,
+            url=room.url
+        )
 
     @classmethod
-    def mutate(cls, _, info, **data):
-        now = utils.now()
-        room = Rooms()
-        room.room_id = utils.generate_room_id()
-        room.access_code = utils.generate_room_code()
-        room.name = data['name']
-        room.created = now
-        room.expiring = utils.add_to_date(now, 'hours', 24)
-        room.save()
-
-        return CreateRoom(room=room)
+    def mutate(cls, _, info: graphene.ResolveInfo, **data):
+        return room_actions.create_room(room_name=data['name'])
 
 
 class UpdateRooms(graphene.Mutation):
@@ -103,22 +96,6 @@ class UpdateRooms(graphene.Mutation):
 class Query(graphene.ObjectType):
     rooms = graphene.List(RoomsType)
     messages = graphene.List(MessagesType)
-    joined_rooms = graphene.List(JoinedRoomsType)
-
-    @staticmethod
-    def resolve_rooms(self, info, **kwargs):
-        # Querying a list
-        return Rooms.objects.all()
-
-    @staticmethod
-    def resolve_messages(self, info, **kwargs):
-        # Querying a list
-        return Messages.objects.all()
-
-    @staticmethod
-    def resolve_joined_rooms(self, info, **kwargs):
-        # Querying a list
-        return JoinedRooms.objects.all()
 
 
 class Mutation(graphene.ObjectType):

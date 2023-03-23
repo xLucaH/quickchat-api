@@ -4,19 +4,23 @@ from django.contrib.auth.models import AbstractUser
 
 
 class User(AbstractUser):
-    user_id = models.CharField(primary_key=True, max_length=60)
-    password = models.CharField(max_length=128)
-
-    last_login = models.DateTimeField(blank=True, null=True)
-    date_joined = models.DateTimeField(default=timezone.now)
-
-    username = models.CharField(unique=True, max_length=150)
-    first_name = models.CharField(max_length=150)
-    last_name = models.CharField(max_length=150)
-    email = models.CharField(max_length=254)
+    identifier = models.CharField(primary_key=True, max_length=60)
+    created = models.DateTimeField(default=timezone.now)
+    username = models.CharField(unique=False, max_length=150, null=False)
     ip = models.CharField(max_length=255, blank=True, null=True)
+    is_superuser = models.BooleanField(blank=True, null=True, default=False)
+    is_active = models.BooleanField(null=False, default=True)
 
-    is_online = models.BooleanField(blank=True, null=True)
-    is_superuser = models.IntegerField(blank=True, null=True)
+    """
+    Those fields are auto generated from django but we won't use them in our app.
+    """
+
+    password = models.CharField(max_length=128, blank=True, null=True)
+    first_name = models.CharField(max_length=150, blank=True, null=True)
+    last_name = models.CharField(max_length=150, blank=True, null=True)
+    email = models.CharField(max_length=254, blank=True, null=True)
     is_staff = models.IntegerField(blank=True, null=True)
-    is_active = models.IntegerField(blank=True, null=True)
+    date_joined = models.DateTimeField(blank=True, null=True)
+    last_login = models.DateTimeField(blank=True, null=True)
+
+    USERNAME_FIELD = 'identifier'

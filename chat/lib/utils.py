@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 from typing import Union
 from uuid import uuid4
 
+from django.conf import settings
+
 from chat.models import Rooms
 
 
@@ -12,7 +14,7 @@ def now() -> datetime.date:
     Returns the current time as date.
     :return:
     """
-    return datetime.now().date()
+    return datetime.now()
 
 
 def generate_room_id() -> str:
@@ -61,3 +63,7 @@ def get_room_by_access_code(access_code: str) -> Union[Rooms, None]:
         return Rooms.objects.filter(access_code=access_code).get()
     except Rooms.DoesNotExist:
         return None
+
+
+def build_room_url(access_code: str) -> str:
+    return f'{settings.FRONTEND_URL}rooms/{access_code}/'
