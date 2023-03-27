@@ -18,24 +18,24 @@ class RoomRepository(domain.RoomRepositoryContract, database.DjangoDB):
         self.room_users_table = 'chat_room_users'
         self.room_tokens_table = 'chat_room_tokens'
 
-    def get_room_by_access_code(self, access_code: str) -> Union[room_models.RoomModel, None]:
-        """
-        Find's a room by its id inside the database and returns a RoomModel instance.
-        If no room was found, None is returned.
+    def get_room_by_id(self, room_id: str) -> Union[RoomModel, None]:
+        sql_to_execute = self._get_room_query()
+        sql_to_execute += " WHERE room_id = %s"
 
-        :param access_code: the room to find
-        """
-        sql_to_execute = f"""
-                         SELECT room_id, name, access_code, created, expiring
-                         FROM {self.room_table}
-                         WHERE access_code = %s
-                         """
-
-        data = self.query(sql_to_execute, (access_code, ), single=True)
+        data = self.query(sql_to_execute, (room_id,), single=True)
 
         if not data:
             return None
 
+        return self._query_data_to_room_model(data)
+
+    def _get_room_query(self):
+        return f"""
+               SELECT room_id, name, access_code, created, expiring
+               FROM {self.room_table}
+               """
+
+    def _query_data_to_room_model(self, data) -> RoomModel:
         return room_models.RoomModel(
             id=uuid.UUID(data['room_id']),
             name=data['name'],
@@ -43,6 +43,23 @@ class RoomRepository(domain.RoomRepositoryContract, database.DjangoDB):
             created=data['created'],
             expiring=data['expiring'],
         )
+
+    def get_room_by_access_code(self, access_code: str) -> Union[room_models.RoomModel, None]:
+        """
+        Find's a room by its id inside the database and returns a RoomModel instance.
+        If no room was found, None is returned.
+
+        :param access_code: the room to find
+        """
+        sql_to_execute = self._get_room_query()
+        sql_to_execute += " WHERE access_code = %s"
+
+        data = self.query(sql_to_execute, (access_code, ), single=True)
+
+        if not data:
+            return None
+
+        return self._query_data_to_room_model(data)
 
     def get_room_messages(self, room_id: uuid.UUID) -> List[RoomMessageModel]:
         """

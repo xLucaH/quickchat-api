@@ -47,7 +47,6 @@ class RoomUserModel(helper_classes.MappingDataclass):
 
     id: uuid.UUID
     room_id: uuid.UUID
-
     username: str
     is_active: bool
     date_joined: datetime
@@ -55,6 +54,13 @@ class RoomUserModel(helper_classes.MappingDataclass):
     last_login: datetime = None
     ip4: str = None
 
+    def to_dict(self) -> dict:
+        return {
+            "user_id": self.id.hex,
+            "username": self.username,
+            "last_login": self.last_login.strftime("%Y-%m-%d, %H:%M:%S") if self.last_login else None,
+            "date_joined": self.date_joined.strftime("%Y-%m-%d, %H:%M:%S")
+        }
 
 @dataclass
 class RoomMessageModel:
@@ -64,6 +70,13 @@ class RoomMessageModel:
     sender_id: uuid.UUID
     content: str
     room_id: uuid.UUID
+
+    def to_dict(self) -> dict:
+        return {
+            "sender": self.sender_id.hex,
+            "content": self.content,
+            "sent_date": self.created.strftime("%Y-%m-%d, %H:%M:%S")
+        }
 
 
 @dataclass

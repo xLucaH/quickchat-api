@@ -3,13 +3,19 @@ from chat.lib.domain.room_models import *
 from chat.lib import exceptions
 
 
-class GetRoomAction:
+class GetChatAction:
 
     def __init__(self, repository: RoomRepositoryContract):
         self.repository = repository
 
-    def __call__(self, access_code: str) -> Chat:
-        room = self.repository.get_room_by_access_code(access_code)
+    def __call__(self, access_code: str, by_id=True) -> Chat:
+
+        if by_id:
+            get_room_method = self.repository.get_room_by_id
+        else:
+            get_room_method = self.repository.get_room_by_access_code
+
+        room = get_room_method(access_code)
 
         if room is None:
             raise exceptions.RoomNotExisting

@@ -12,6 +12,10 @@ class RoomRepositoryContract(ABC):
         pass
 
     @abstractmethod
+    def get_room_by_id(self, room_id: str) -> Union[RoomModel, None]:
+        pass
+
+    @abstractmethod
     def get_room_messages(self, room_id: UUID) -> List[RoomMessageModel]:
         pass
 
