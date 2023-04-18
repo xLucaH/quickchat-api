@@ -8,7 +8,12 @@ class GetChatAction:
     def __init__(self, repository: RoomRepositoryContract):
         self.repository = repository
 
-    def __call__(self, access_code: str, by_id=True) -> Chat:
+    def __call__(
+            self,
+            access_code: str,
+            by_id = True,
+            messages_since: datetime = None
+    ) -> Chat:
 
         if by_id:
             get_room_method = self.repository.get_room_by_id
@@ -20,7 +25,7 @@ class GetChatAction:
         if room is None:
             raise exceptions.RoomNotExisting
 
-        messages = self.repository.get_room_messages(room.id)
+        messages = self.repository.get_room_messages(room.id, since = messages_since)
         users = self.repository.get_room_users(room.id)
 
         return Chat(

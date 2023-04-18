@@ -35,6 +35,7 @@ ALLOWED_HOSTS = conf['ALLOWED_HOSTS']
 CORS_ALLOWED_ORIGINS = conf['ALLOWED_CORS_ORIGINS']
 
 FRONTEND_URL = conf['FRONTEND_URL']
+HOST_URL = conf['HOST_URL']
 
 # Application apps from django.
 DEFAULT_APPS = [
@@ -105,6 +106,35 @@ CHANNEL_LAYERS = {
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '/home/luca/PycharmProjects/quickchat-api/debug.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'daphne': {
+            'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '/home/luca/PycharmProjects/quickchat-api/debug.log',
+        }
+            },
+            'level': 'DEBUG'
+        },
+    },
+}
+
 
 DATABASES = {
     'default': {
@@ -138,7 +168,6 @@ AUTH_PASSWORD_VALIDATORS = [
 # Custom User Model
 AUTH_USER_MODEL = 'acc.User'
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
 
@@ -156,6 +185,8 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, STATIC_URL)
+
+MEDIA_ROOT = conf['MEDIA_ROOT']
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field

@@ -14,7 +14,7 @@ def get_client_ip(request):
 
 def add_to_date(in_date: datetime.date, time_format: str, value: int) -> datetime.date:
     """
-    Add's a specific time value to the input date.
+    Adds a specific time value to the input date.
 
     :param in_date: The date you want to add time to.
     :param time_format: The time format you want to use, e.g 'days', 'hours'.

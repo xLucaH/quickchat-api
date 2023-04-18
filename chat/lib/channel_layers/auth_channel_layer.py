@@ -1,21 +1,19 @@
-from asgiref.sync import async_to_sync
-
 from channels.generic.websocket import WebsocketConsumer
 from channels.layers import get_channel_layer
 
 from chat.lib.domain.di import room_actions
 from chat.lib.events import EventType, ChannelEvent
 
+from .channel_methods import USER_CHANNEL_METHOD
+from ..domain.room_models import ChatUser
+
 
 class AuthChannelLayer:
-
-    USER_CHANNEL_METHOD = "user_channel"
-    ROOM_CHANNEL_METHOD = "room_channel"
 
     def __init__(self, websocket: WebsocketConsumer):
         self.websocket = websocket
 
-    def authenticate(self, data: dict):
+    async def authenticate(self, data: dict):
         token = data['token']
         user = room_actions.authenticate(token)
 
@@ -24,30 +22,46 @@ class AuthChannelLayer:
             return
 
         channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_add)(user.id.hex, self.websocket.channel_name)
 
-        chat = room_actions.get_chat(user.room_id.hex, by_id=True)
+        chat = room_actions.get_chat(user.room_id.hex, by_id=True, messages_since=user.date_joined)
+        chat_room_channel = "chat_%s" % chat.room.access_code
 
-        async_to_sync(channel_layer.group_add)(f"chat_{chat.room.access_code}", self.websocket.channel_name)
+        self.websocket.scope['user_id'] = user.id.hex
+        self.websocket.scope['users'] = [ChatUser(**x.__dict__) for x in chat.users]
+
+        await channel_layer.group_add(chat_room_channel, self.websocket.channel_name)
+        await channel_layer.group_add(user.id.hex, self.websocket.channel_name)
 
         channel_auth_event = ChannelEvent(
-            method=self.USER_CHANNEL_METHOD,
+            method=USER_CHANNEL_METHOD,
             event_type=EventType.AUTHENTICATE_SUCCESS,
-            data= user.to_dict()
+            data=user.to_dict()
+        )
+        channel_room_event = ChannelEvent(
+            method=USER_CHANNEL_METHOD,
+            event_type=EventType.ROOM,
+            data = {
+                'expiring': chat.room.expiring.isoformat(),
+                'name': chat.room.name,
+                'messages': [x.to_dict() for x in chat.messages],
+            }
         )
 
-        channel_users_event = ChannelEvent(
-            method=self.USER_CHANNEL_METHOD,
-            event_type=EventType.USERS,
-            data = [x.to_dict() for x in chat.users]
+        # !!!! CAUTION !!!!
+        # I spent days trying to find the reason for why the AUTH_SUCCESS event won't be received from the consumer
+        # method.
+        # For some reason the first call of the group_send() does not work.
+        # So I implemented this shadow event to work around this bug.
+        await channel_layer.group_send(
+            user.id.hex, ChannelEvent(
+                method=USER_CHANNEL_METHOD,
+                event_type=EventType.NO_TRIGGER_EVENT,
+                data=None
+            ).serialize()
         )
-
-        async_to_sync(channel_layer.group_send)(
+        await channel_layer.group_send(
             user.id.hex, channel_auth_event.serialize()
         )
-
-        async_to_sync(channel_layer.group_send)(
-            f"chat_{chat.room.access_code}", channel_users_event.serialize()
+        await channel_layer.group_send(
+            user.id.hex, channel_room_event.serialize()
         )
-
-        self.websocket.scope['user'] = user

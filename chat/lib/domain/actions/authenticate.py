@@ -20,4 +20,6 @@ class AuthenticateAction:
         if user is None:
             return None
 
+        self.repository.set_online_status(user.id.hex, True)
+
         return user

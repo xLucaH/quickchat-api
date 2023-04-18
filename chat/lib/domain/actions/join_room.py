@@ -1,4 +1,3 @@
-from typing import Union
 import uuid
 
 from django.http.request import HttpRequest
@@ -29,6 +28,7 @@ class JoinRoomAction:
                 username=username,
                 date_joined=core_utils.now(),
                 is_active=True,
+                is_online=False
             )
         )
 

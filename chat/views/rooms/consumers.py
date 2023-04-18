@@ -1,14 +1,18 @@
 import json
 
-from channels.generic.websocket import WebsocketConsumer
+from channels.generic.websocket import AsyncWebsocketConsumer
 
 from chat.lib.channel_layers.auth_channel_layer import AuthChannelLayer
 from chat.lib.channel_layers.message_channel_layer import MessageChannelLayer
+from chat.lib.channel_layers.user_channel_layer import UserChannelLayer
 
 from chat.lib.events import EventHandler, EventType, ChannelEvent
 
 
-class RoomsConsumer(WebsocketConsumer):
+class RoomsConsumer(AsyncWebsocketConsumer):
+
+    USER_CHANNEL_METHOD = "user_channel"
+    ROOM_CHANNEL_METHOD = "room_channel"
 
     def __init__(self):
         super().__init__()
@@ -17,9 +21,13 @@ class RoomsConsumer(WebsocketConsumer):
 
         self.auth_layer = AuthChannelLayer(self)
         self.message_layer = MessageChannelLayer(self)
+        self.user_layer = UserChannelLayer(self)
 
-        self.event_handler.register_event(EventType.AUTHENTICATE, self.auth_layer.authenticate)
+        self.event_handler.register_event(EventType.AUTHENTICATE, [self.auth_layer.authenticate, self.user_layer.connected])
+        self.event_handler.register_event(EventType.USER_DISCONNECT, self.user_layer.disconnected)
         self.event_handler.register_event(EventType.MESSAGES, self.message_layer.receive)
+
+        self.room_name = None
 
     def get_access_code(self) -> str:
         return self.scope["url_route"]["kwargs"]["access_code"]
@@ -27,45 +35,55 @@ class RoomsConsumer(WebsocketConsumer):
     """
     Our chat room websocket.
     """
-    def connect(self):
-        self.accept()
+    async def connect(self):
+        await self.accept()
 
         access_code = self.scope["url_route"]["kwargs"]["access_code"]
-        room_group_name = f"chat_{access_code}"
+        self.room_name = f"chat_{access_code}"
 
-    def disconnect(self, close_code):
-        pass
-        # Leave room group
-        # async_to_sync(self.channel_layer.group_discard)(
-        #     self.room_group_name, self.channel_name
-        # )
+    async def disconnect(self, close_code):
+        await self.event_handler.dispatch(EventType.USER_DISCONNECT, None)
 
     # Receive message from WebSocket
-    def receive(self, text_data=None, bytes_data=None):
+    async def receive(self, text_data=None, bytes_data=None):
         event: dict = json.loads(text_data)
         print(event)
         event_type = EventType(event["type"])
         data = event["data"]
 
-        self.event_handler.dispatch(event_type, data)
+        await self.event_handler.dispatch(event_type, data)
 
     # Receive message from room group
-    def message(self, event):
+    async def message(self, event):
         message = event["data"]
 
         # Send message to WebSocket
-        self.send(text_data=json.dumps({"type": "message", "data": message}))
+        await self.send(text_data=json.dumps({"type": "message", "data": message}))
 
-    def user_channel(self, data: dict):
+    async def user_channel(self, data: dict):
         event = ChannelEvent.deserialize(data)
-        self.send(json.dumps({
+
+        # Do not do anything with NO_TRIGGER Events.
+        # For more details read docs for NO_TRIGGER_EVENT enum type.
+        if event.event_type == EventType.NO_TRIGGER_EVENT:
+            return
+
+        print(event.event_type)
+        await self.send(json.dumps({
             'type': event.event_type.value,
             'data': event.data
         }))
 
-    def room_channel(self, data: dict):
+    async def room_channel(self, data: dict):
         event = ChannelEvent.deserialize(data)
-        self.send(json.dumps({
+
+        # Do not do anything with NO_TRIGGER Events.
+        # For more details read docs for NO_TRIGGER_EVENT enum type.
+        if event.event_type == EventType.NO_TRIGGER_EVENT:
+            return
+
+        print(event.event_type)
+        await self.send(json.dumps({
             'type': event.event_type.value,
             'data': event.data
         }))

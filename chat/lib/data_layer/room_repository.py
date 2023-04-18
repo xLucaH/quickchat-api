@@ -61,21 +61,31 @@ class RoomRepository(domain.RoomRepositoryContract, database.DjangoDB):
 
         return self._query_data_to_room_model(data)
 
-    def get_room_messages(self, room_id: uuid.UUID) -> List[RoomMessageModel]:
+    def get_room_messages(self, room_id: uuid.UUID, since: datetime = None) -> List[RoomMessageModel]:
         """
         Gets all messages of a given room by its access code.
 
         :param room_id: Room id (Not the access code).
+        :param since: Filter messages from a specific starting date.
         :return: A list of all messages of the given room.
         """
 
         sql_to_execute = """
-                         SELECT message_id, created, content, rooms_users__user_id, rooms__room_id
+                         SELECT message_id, created, content, rooms_users__user_id, rooms__room_id, 
+                                chat_message_types__message_type_id
                          FROM chat_messages
+                         LEFT JOIN chat_message_types ON chat_message_types__message_type_id = message_type_id
                          WHERE rooms__room_id = %s
                          """
+        values_to_insert = [room_id.hex, ]
 
-        data = self.query(sql_to_execute, (str(room_id), ))
+        if since is not None:
+            values_to_insert.append(since)
+            sql_to_execute += "AND created >= %s"
+
+        sql_to_execute += " ORDER BY created ASC"
+
+        data = self.query(sql_to_execute, values_to_insert)
 
         formatted_data = []
 
@@ -84,9 +94,10 @@ class RoomRepository(domain.RoomRepositoryContract, database.DjangoDB):
                 RoomMessageModel(
                     id=uuid.UUID(row['message_id']),
                     created=row['created'],
-                    sender_id=uuid.UUID(row['room_users__user_id']),
+                    sender_id=uuid.UUID(row['rooms_users__user_id']),
                     content=row['content'],
-                    room_id=uuid.UUID(row["rooms__room_id"])
+                    room_id=uuid.UUID(row["rooms__room_id"]),
+                    message_type=MessageType(row['chat_message_types__message_type_id'])
                 )
             )
 
@@ -101,7 +112,7 @@ class RoomRepository(domain.RoomRepositoryContract, database.DjangoDB):
         """
 
         sql_to_execute = """
-                         SELECT user_id, username, ip4, date_joined, last_login, is_active, rooms__room_id,
+                         SELECT user_id, username, ip4, date_joined, last_login, is_active, is_online, rooms__room_id,
                                 token_id, token, created, expiring, last_modified
                          FROM chat_room_users
                          JOIN chat_room_tokens ON user_id = chat_room_tokens.room_users__user_id
@@ -122,6 +133,7 @@ class RoomRepository(domain.RoomRepositoryContract, database.DjangoDB):
                     date_joined=row['date_joined'],
                     last_login=row['last_login'],
                     ip4=row['ip4'],
+                    is_online=bool(row['is_online'])
                 )
             )
 
@@ -160,6 +172,7 @@ class RoomRepository(domain.RoomRepositoryContract, database.DjangoDB):
             'date_joined': user.date_joined,
             'last_login': user.last_login,
             'is_active': user.is_active,
+            'is_online': user.is_online,
             'rooms__room_id': user.room_id.hex,
         })
 
@@ -215,7 +228,7 @@ class RoomRepository(domain.RoomRepositoryContract, database.DjangoDB):
     def get_user_by_id(self, user_id: str) -> Union[RoomUserModel, None]:
 
         sql_to_execute = """
-                         SELECT user_id, username, ip4, date_joined, last_login, is_active, rooms__room_id
+                         SELECT user_id, username, ip4, date_joined, last_login, is_active, is_online, rooms__room_id
                          FROM chat_room_users
                          WHERE user_id = %s
                          """
@@ -233,4 +246,34 @@ class RoomRepository(domain.RoomRepositoryContract, database.DjangoDB):
             date_joined = row['date_joined'],
             last_login = row['last_login'],
             ip4 = row['ip4'],
+            is_online=bool(row['is_online'])
         )
+
+    def set_online_status(self, user_id: str, value: bool):
+        sql_to_execute = """
+                         UPDATE chat_room_users
+                         SET is_online = %s
+                         """
+        values_to_insert = [value]
+
+        if value is True:
+            sql_to_execute += ", last_login = %s"
+            values_to_insert.append(datetime.now())
+
+        values_to_insert.append(user_id)
+        sql_to_execute += "WHERE user_id = % s"
+
+        self.execute(sql_to_execute, values_to_insert)
+        self.commit()
+
+    def save_message(self, message: RoomMessageModel):
+        self.insert("chat_messages", {
+            'message_id': message.id.hex,
+            'created': message.created,
+            'content': message.content,
+            'rooms__room_id': message.room_id.hex,
+            'rooms_users__user_id': message.sender_id.hex,
+            'chat_message_types__message_type_id': message.message_type.value
+        })
+
+        self.commit()

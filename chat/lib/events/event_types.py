@@ -1,16 +1,25 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
 
 class EventType(Enum):
 
+    AVAILABLE = 'chat.status.available'
     AUTHENTICATE = 'chat.auth.request'
     AUTHENTICATE_SUCCESS = "chat.auth.success"
     MESSAGES = "chat.message"
     USERS = "chat.users"
+    ROOM = "chat.room"
+    TEST_AUTH = "chat.test_auth"
+    USER_DISCONNECT = "chat.user.disconnect"
+
+    # This is a hack for a bug that occurs when trying to execute group_send multiple times in a row.
+    # Use this event if you encounter this bug.
+    # This event won't be sent back to the client.
+    NO_TRIGGER_EVENT = "NO_TRIGGER"
 
 
 @dataclass
@@ -34,5 +43,3 @@ class ChannelEvent:
             event_type=EventType(data['event_type']),
             data=data['data']
         )
-
-

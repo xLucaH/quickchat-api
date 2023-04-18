@@ -9,15 +9,15 @@ class EventHandler:
 
         self.events: Dict[EventType, List] = {}
 
-    def register_event(self, event: Union[EventType, List[EventType]], function: callable):
+    def register_event(self, event: EventType, function: Union[callable, List[callable]]):
 
-        if isinstance(event, EventType):
+        if callable(function):
             self._register_event(event, function)
             return
 
-        if isinstance(event, list):
-            for e in event:
-                self._register_event(e, function)
+        if isinstance(function, list):
+            for fn in function:
+                self._register_event(event, fn)
 
     def _register_event(self, event: EventType, function: callable):
         handlers = self.events.get(event, None)
@@ -27,11 +27,11 @@ class EventHandler:
         else:
             self.events[event].append(function)
 
-    def dispatch(self, event: EventType, data):
-        handlers = self.events.get(event, None)
+    async def dispatch(self, event: EventType, data):
+        handlers: List[callable] = self.events.get(event, None)
 
         if handlers is None:
             raise ValueError(f'Unknown event of type "{event}"')
 
         for func in handlers:
-            func(data)
+            await func(data)

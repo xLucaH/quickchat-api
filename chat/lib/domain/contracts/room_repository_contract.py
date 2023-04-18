@@ -1,3 +1,4 @@
+from datetime import datetime
 from abc import ABC, abstractmethod
 from typing import Union, List
 from uuid import UUID
@@ -16,7 +17,7 @@ class RoomRepositoryContract(ABC):
         pass
 
     @abstractmethod
-    def get_room_messages(self, room_id: UUID) -> List[RoomMessageModel]:
+    def get_room_messages(self, room_id: UUID, since: datetime = None) -> List[RoomMessageModel]:
         pass
 
     @abstractmethod
@@ -39,5 +40,14 @@ class RoomRepositoryContract(ABC):
     def get_room_token(self, token: str) -> RoomAuthTokenModel:
         pass
 
+    @abstractmethod
     def get_user_by_id(self, user_id: str) -> RoomUserModel:
+        pass
+
+    @abstractmethod
+    def set_online_status(self, user_id: str, value: bool):
+        pass
+
+    @abstractmethod
+    def save_message(self, message: RoomMessageModel):
         pass

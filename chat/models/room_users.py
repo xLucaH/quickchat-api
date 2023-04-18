@@ -15,5 +15,7 @@ class RoomUsers(models.Model):
     last_login = models.DateTimeField(null=True)
     is_active = models.BooleanField(null=False)
 
+    is_online = models.BooleanField(null=False)
+
     class Meta:
         db_table = 'chat_room_users'
