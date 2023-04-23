@@ -29,7 +29,8 @@ class MessageChannelLayer:
 
         return None
 
-    async def receive(self, text: str):
+    async def receive_text(self, data: dict):
+        text = data['message']
         allowed_html_tags = ["div", "&nbsp;", "br"]
         channel_layer = get_channel_layer()
         user: ChatUser = self.get_user_from_scope()
@@ -47,10 +48,11 @@ class MessageChannelLayer:
 
         room_data_event = ChannelEvent(
             method=ROOM_CHANNEL_METHOD,
-            event_type=EventType.MESSAGES,
+            event_type=EventType.TEXT_MESSAGE,
             data = message.to_dict()
         )
 
-        await channel_layer.group_send(
-            self.ws.room_name, room_data_event.serialize()
-        )
+        await channel_layer.group_send(self.ws.room_name, room_data_event.serialize())
+
+    async def receive_image(self, data):
+        x = 2

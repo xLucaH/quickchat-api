@@ -9,10 +9,17 @@ class EventHandler:
 
         self.events: Dict[EventType, List] = {}
 
-    def register_event(self, event: EventType, function: Union[callable, List[callable]]):
+    def register_event(self, event: Union[EventType, List[EventType]], function: Union[callable, List[callable]]):
+        event_types = []
+
+        if isinstance(event, list):
+            event_types.extend(event)
+        else:
+            event_types.append(event)
 
         if callable(function):
-            self._register_event(event, function)
+            for e in event_types:
+                self._register_event(e, function)
             return
 
         if isinstance(function, list):

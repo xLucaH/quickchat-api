@@ -25,7 +25,10 @@ class RoomsConsumer(AsyncWebsocketConsumer):
 
         self.event_handler.register_event(EventType.AUTHENTICATE, [self.auth_layer.authenticate, self.user_layer.connected])
         self.event_handler.register_event(EventType.USER_DISCONNECT, self.user_layer.disconnected)
-        self.event_handler.register_event(EventType.MESSAGES, self.message_layer.receive)
+
+        ####################### MESSAGE EVENTS #######################
+        self.event_handler.register_event(EventType.TEXT_MESSAGE, self.message_layer.receive_text)
+        self.event_handler.register_event(EventType.IMAGE_MESSAGE, self.message_layer.receive_image)
 
         self.room_name = None
 

@@ -1,9 +1,10 @@
 import uuid
 from datetime import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List
 from enum import Enum
 
+from chat.lib.domain.files.media_folder import build_media_url
 from quickchat.core import helper_classes
 
 
@@ -73,6 +74,22 @@ class RoomUserModel(helper_classes.MappingDataclass):
             "is_online": self.is_online
         }
 
+
+@dataclass
+class RoomMessageAttachmentModel:
+
+    id: uuid.UUID
+    message_id: uuid.UUID
+
+    path: str
+    mime_type: str
+
+    def to_dict(self) -> dict:
+        return {
+            "url": build_media_url(self.path),
+            "mime_type": self.mime_type
+        }
+
 @dataclass
 class RoomMessageModel:
 
@@ -82,12 +99,14 @@ class RoomMessageModel:
     content: str
     room_id: uuid.UUID
     message_type: MessageType
+    attachments: List[RoomMessageAttachmentModel] = field(default_factory=lambda: [])
 
     def to_dict(self) -> dict:
         return {
             "sender": self.sender_id.hex,
-            "content": self.content,
-            "sent_date": self.created.isoformat()
+            "text": self.content,
+            "sent_date": self.created.isoformat(),
+            'attachments': [x.to_dict() for x in self.attachments]
         }
 
 

@@ -34,8 +34,9 @@ class MediaFolder:
         """
         Creates a guid folder inside the media directory.
         """
-        os.mkdir(self.path_full)
-        os.chmod(self.path_full, self.folder_rights)
+        if not os.path.exists(self.path_full):
+            os.mkdir(self.path_full)
+            os.chmod(self.path_full, self.folder_rights)
 
     def save_file(self, file: File, path: str) -> Tuple[str, str]:
         """
@@ -120,7 +121,7 @@ def build_media_url(relative_path) -> str:
     :param relative_path
     :return: absolute media url
     """
-    return f'{settings.HOST_URL}{settings.MEDIA_ROOT}{relative_path}'
+    return f'{settings.HOST_URL}{settings.MEDIA_ROOT}/{relative_path}'
 
 
 def ext_and_filename(path: str) -> Tuple[str, str]:

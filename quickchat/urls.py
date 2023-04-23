@@ -21,10 +21,12 @@ from django.views.decorators.csrf import csrf_exempt
 
 from graphene_django.views import GraphQLView
 from chat.schema import schema
+from chat.views.rooms import uploads
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('graphql/', csrf_exempt(GraphQLView.as_view(graphiql=True, schema=schema))),
+    path('rooms/<str:room_access_code>/upload-file/', uploads.upload_file),
     path('', include('acc.urls')),
 ]
 

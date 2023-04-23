@@ -267,13 +267,30 @@ class RoomRepository(domain.RoomRepositoryContract, database.DjangoDB):
         self.commit()
 
     def save_message(self, message: RoomMessageModel):
-        self.insert("chat_messages", {
-            'message_id': message.id.hex,
-            'created': message.created,
-            'content': message.content,
-            'rooms__room_id': message.room_id.hex,
-            'rooms_users__user_id': message.sender_id.hex,
-            'chat_message_types__message_type_id': message.message_type.value
-        })
+        self.insert(
+            table="chat_messages",
+            data={
+                'message_id': message.id.hex,
+                'created': message.created,
+                'content': message.content,
+                'rooms__room_id': message.room_id.hex,
+                'rooms_users__user_id': message.sender_id.hex,
+                'chat_message_types__message_type_id': message.message_type.value
+            }
+        )
+
+        insert_attachments = []
+        for attachment in message.attachments:
+            insert_attachments.append({
+                'attachment_id': attachment.id.hex,
+                'path': attachment.path,
+                'mime_type': attachment.mime_type,
+                'chat_messages__message_id': attachment.message_id.hex
+            })
+
+        self.insert(
+            table='chat_message_attachments',
+            data=insert_attachments
+        )
 
         self.commit()
