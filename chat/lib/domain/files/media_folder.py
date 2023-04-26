@@ -1,5 +1,6 @@
 import os
 from typing import Tuple, List
+from urllib.parse import urljoin
 
 from django.conf import settings
 from django.core.files.storage import default_storage
@@ -121,7 +122,8 @@ def build_media_url(relative_path) -> str:
     :param relative_path
     :return: absolute media url
     """
-    return f'{settings.HOST_URL}{settings.MEDIA_ROOT}/{relative_path}'
+    base_path = urljoin(settings.HOST_URL, settings.MEDIA_URL)
+    return urljoin(base_path, relative_path)
 
 
 def ext_and_filename(path: str) -> Tuple[str, str]:

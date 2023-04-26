@@ -90,6 +90,7 @@ class RoomMessageAttachmentModel:
             "mime_type": self.mime_type
         }
 
+
 @dataclass
 class RoomMessageModel:
 
@@ -106,7 +107,8 @@ class RoomMessageModel:
             "sender": self.sender_id.hex,
             "text": self.content,
             "sent_date": self.created.isoformat(),
-            'attachments': [x.to_dict() for x in self.attachments]
+            'type': self.message_type.value,
+            'attachments': [x.to_dict() for x in self.attachments],
         }
 
 

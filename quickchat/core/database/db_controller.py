@@ -101,7 +101,6 @@ class Database:
                          """
 
         self.execute(sql_to_execute, insert_values)
-
         return
 
 

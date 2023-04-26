@@ -33,8 +33,7 @@ DEBUG = conf['DEBUG']
 
 ALLOWED_HOSTS = conf['ALLOWED_HOSTS']
 CORS_ALLOWED_ORIGINS = conf['ALLOWED_CORS_ORIGINS']
-CORS_ALLOW_HEADERS = ['Authorization']
-
+CORS_ALLOW_HEADERS = ['Authorization', 'Content-Type']
 
 FRONTEND_URL = conf['FRONTEND_URL']
 HOST_URL = conf['HOST_URL']

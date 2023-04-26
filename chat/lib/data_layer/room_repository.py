@@ -72,9 +72,11 @@ class RoomRepository(domain.RoomRepositoryContract, database.DjangoDB):
 
         sql_to_execute = """
                          SELECT message_id, created, content, rooms_users__user_id, rooms__room_id, 
-                                chat_message_types__message_type_id
+                                chat_message_types__message_type_id, path, mime_type, attachment_id,
+                                chat_messages__message_id
                          FROM chat_messages
                          LEFT JOIN chat_message_types ON chat_message_types__message_type_id = message_type_id
+                         LEFT JOIN chat_message_attachments ON message_id = chat_messages__message_id
                          WHERE rooms__room_id = %s
                          """
         values_to_insert = [room_id.hex, ]
@@ -90,16 +92,27 @@ class RoomRepository(domain.RoomRepositoryContract, database.DjangoDB):
         formatted_data = []
 
         for row in data:
-            formatted_data.append(
-                RoomMessageModel(
+            message =  RoomMessageModel(
                     id=uuid.UUID(row['message_id']),
                     created=row['created'],
                     sender_id=uuid.UUID(row['rooms_users__user_id']),
                     content=row['content'],
                     room_id=uuid.UUID(row["rooms__room_id"]),
-                    message_type=MessageType(row['chat_message_types__message_type_id'])
+                    message_type=MessageType(row['chat_message_types__message_type_id']),
+                    attachments=[]
                 )
-            )
+
+            if row['attachment_id'] is not None:
+                message.attachments.append(
+                    RoomMessageAttachmentModel(
+                        id=uuid.UUID(row['attachment_id']),
+                        message_id=uuid.UUID(row['chat_messages__message_id']),
+                        path=row['path'],
+                        mime_type=row['mime_type']
+                    )
+                )
+
+            formatted_data.append(message)
 
         return formatted_data
 
@@ -279,18 +292,15 @@ class RoomRepository(domain.RoomRepositoryContract, database.DjangoDB):
             }
         )
 
-        insert_attachments = []
         for attachment in message.attachments:
-            insert_attachments.append({
-                'attachment_id': attachment.id.hex,
-                'path': attachment.path,
-                'mime_type': attachment.mime_type,
-                'chat_messages__message_id': attachment.message_id.hex
-            })
-
-        self.insert(
-            table='chat_message_attachments',
-            data=insert_attachments
-        )
+            self.insert(
+                table='chat_message_attachments',
+                data={
+                    'attachment_id': attachment.id.hex,
+                    'path': attachment.path,
+                    'mime_type': attachment.mime_type,
+                    'chat_messages__message_id': attachment.message_id.hex
+                }
+            )
 
         self.commit()
