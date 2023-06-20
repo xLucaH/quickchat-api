@@ -11,7 +11,10 @@ class EventType(Enum):
     AUTHENTICATE = 'chat.auth.request'
     AUTHENTICATE_SUCCESS = "chat.auth.success"
     TEXT_MESSAGE = "chat.message.text"
+    SYSTEM_MESSAGE = "chat.message.system"
     IMAGE_MESSAGE = "chat.message.image"
+    VIDEO_MESSAGE = "chat.message.video"
+    AUDIO_MESSAGE = "chat.message.audio"
     USERS = "chat.users"
     ROOM = "chat.room"
     TEST_AUTH = "chat.test_auth"

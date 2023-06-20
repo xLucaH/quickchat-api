@@ -27,6 +27,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('graphql/', csrf_exempt(GraphQLView.as_view(graphiql=True, schema=schema))),
     path('rooms/<str:room_access_code>/upload-file/', uploads.upload_file),
+    path('rooms/<str:room_access_code>/change-profile/', uploads.change_profile_picture),
     path('', include('acc.urls')),
 ]
 

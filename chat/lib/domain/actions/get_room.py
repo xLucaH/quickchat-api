@@ -23,7 +23,7 @@ class GetChatAction:
         room = get_room_method(access_code)
 
         if room is None:
-            raise exceptions.RoomNotExisting
+            raise exceptions.RoomNotExisting()
 
         messages = self.repository.get_room_messages(room.id, since = messages_since)
         users = self.repository.get_room_users(room.id)
