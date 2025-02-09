@@ -1,0 +1,48 @@
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+type CreateRoom {
+  room: RoomsType
+  url: String
+}
+
+scalar DateTime
+
+type JoinRoom {
+  joinRoom: JoinRoomType
+}
+
+type JoinRoomType {
+  token: String
+}
+
+type MessagesType {
+  content: String
+}
+
+type Mutation {
+  createRoom(name: String): CreateRoom
+  updateRoom(accessCode: String!): UpdateRooms
+  joinRoom(accessCode: String, username: String): JoinRoom
+}
+
+type Query {
+  rooms: [RoomsType]
+  messages: [MessagesType]
+  joinRoom: [JoinRoomType]
+}
+
+type RoomsType {
+  roomId: String
+  accessCode: String
+  name: String
+  created: DateTime
+  expiring: DateTime
+  url: String
+}
+
+type UpdateRooms {
+  room: RoomsType
+}
